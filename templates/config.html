@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI服务配置</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        textarea {
+            width: 100%;
+            height: 300px;
+            margin: 10px 0;
+            font-family: monospace;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .status {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .configured {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .not-configured {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>AI服务配置</h2>
+        
+        {% if configured %}
+        <div class="status configured">
+            <p>服务已配置，可以重新输入, 热更新配置。</p>
+            <pre>{{ current_config }}</pre>
+        </div>
+        {% else %}
+        <div class="status not-configured">
+            <p>请输入配置JSON，至少需要包含智谱AI配置。</p>
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/configure">
+            <textarea name="config" placeholder="请输入配置JSON">{{ current_config }}</textarea>
+            <button type="submit">保存配置</button>
+        </form>
+    </div>
+</body>
+</html>
