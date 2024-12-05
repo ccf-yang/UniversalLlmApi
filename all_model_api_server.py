@@ -33,7 +33,7 @@ def get_api_key(api_key_header: str = Security(API_KEY_HEADER)) -> str:
     )
 
 class AIClientManager:
-    """AI客户端管理器，负责初始化和管理所有AI服务提供商的客户端"""
+    """AI客户端管理器，负责初始化和管理所有AI服务提��商的客户端"""
     _instance = None
     _lock = threading.Lock()
     
@@ -72,24 +72,39 @@ class AIClientManager:
             for provider, config in config_data.items():
                 if not config.get("key"):  # 跳过没有key的配置
                     continue
-                    
-                self.all_models[provider] = {
+                
+                # logger.info(f"Processing {provider} config: {json.dumps(config, indent=2)}")
+                
+                # 只保留必要的字段
+                clean_config = {
                     "url": config.get("url", ""),
                     "provider": provider,
                     "key": config["key"]
                 }
                 
+                self.all_models[provider] = clean_config
+                
                 try:
                     if provider == "zhipu":
                         self.clients[provider] = ZhipuAI(api_key=config["key"])
                     else:
-                        self.clients[provider] = OpenAI(
-                            api_key=config["key"],
-                            base_url=config["url"]
-                        )
+                        try:
+                            # 直接使用参数初始化，避免使用字典解包
+                            self.clients[provider] = OpenAI(
+                                api_key=config["key"],
+                                base_url=config.get("url") if config.get("url") else None
+                            )
+                            logger.info(f"Successfully initialized {provider} client")
+                        except TypeError as te:
+                            logger.error(f"TypeError initializing {provider} client: {str(te)}")
+                            # 尝试不带base_url初始化
+                            if "base_url" in str(te):
+                                self.clients[provider] = OpenAI(api_key=config["key"])
+                                logger.info(f"Successfully initialized {provider} client without base_url")
                     logger.info(f"Successfully initialized {provider} client")
                 except Exception as e:
                     logger.error(f"Failed to initialize {provider} client: {str(e)}")
+                    logger.error(f"Error type: {type(e)}")
                     
             self.configured = True
             return True
@@ -255,6 +270,7 @@ async def configure(config: str = Form(...)):
     """处理配置提交"""
     try:
         config_data = json.loads(config)
+        logger.info(f"Received configuration data: {json.dumps(config_data, indent=2)}")
         client_manager.configure_clients(config_data)
         return RedirectResponse(url="/", status_code=303)
     except json.JSONDecodeError:
